@@ -182,6 +182,12 @@ public class KinectManager : MonoBehaviour
 	protected Int64[] aUserIndexIds = new Int64[KinectInterop.Constants.MaxBodyCount];
 	protected Dictionary<Int64, float> dictUserIdToTime = new Dictionary<Int64, float>();
 
+	/// <summary>
+	/// Getter to access if user on scene!!
+	/// </summary>
+	public int GetUserOnScene(){return alUserIds.Count;}
+	public static bool userOnScene = false;
+
 	// Whether the users are limited by number or distance
 	protected bool bLimitedUsers = false;
 	
@@ -2763,10 +2769,12 @@ public class KinectManager : MonoBehaviour
 					Int64 userId = controller ? controller.playerId : 0;
 					
 					//if((userIndex >= 0) && (userIndex < alUserIds.Count))
-					if(userId != 0 && dictUserIdToIndex.ContainsKey(userId))
-					{
+					if (userId != 0 && dictUserIdToIndex.ContainsKey (userId)) {
 						//Int64 userId = alUserIds[userIndex];
-						controller.UpdateAvatar(userId);
+						controller.UpdateAvatar (userId);
+						userOnScene = true;
+					} else {
+						userOnScene = false;
 					}
 				}
 			}
