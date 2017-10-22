@@ -20,18 +20,33 @@ public class AlienManager : MonoBehaviour
 	AvatarController AC_instance;
 	KinectManager KM_instance;
 
-	public GameObject RandomWalkObject;
+	//public RandomWalk RandomWalkScript;
 //	public navmeshagent NavMeshScript;
 	Animator anim;
 	string[] animList = new string[] { "idle", "walk sexy", "WalkFWD", "wave", "18_10", "18_15" };
 	private State state = State.ACTIVITY;
 	private Activity activity = Activity.IDLE;
 	float randomActivityTimer = 0.0f;
+	float kinectTimer = 0.0f;
+	bool stopKinect = false;
+	private MovingTrack OurTrack;
 
+	public float CountDown = 2.0f;
+
+
+	public void SetTrack (MovingTrack track){ OurTrack = track;}
+	private void ToggleTrackMotion(bool state)
+	{
+		if(OurTrack != null)
+		{
+			OurTrack.track = state;
+		}
+	}
 
 	// Use this for initialization
 	void Start ()
 	{
+		
 		//NavMeshAgent agent = GetComponent<NavMeshAgent>();
 		//RandomWalkScript = GetComponent<RandomWalk> ();
 		anim = GetComponent<Animator> ();
@@ -42,12 +57,14 @@ public class AlienManager : MonoBehaviour
 		switch (newState) {
 		case State.KINECT:
 			Debug.Log ("KINECT");
-			RandomWalkObject.SetActive(false);
+			//ACC.enabled = true;
 			anim.enabled = false;
+			ToggleTrackMotion(false);
 			break;
 		case State.ACTIVITY:
 			Debug.Log ("ACTIVITY");
 			anim.enabled = true;
+
 			break;
 		}
 		state = newState;
@@ -58,18 +75,21 @@ public class AlienManager : MonoBehaviour
 		switch (newActivity) {
 		case Activity.IDLE:
 			Debug.Log ("IDLE");
-			RandomWalkObject.SetActive (false);
+			//ACC.enabled = false;
 			anim.Play (animList[0]);
+			ToggleTrackMotion(false);
 			break;
 		case Activity.WALK:
 			Debug.Log ("WALK");
-			RandomWalkObject.SetActive(true);
+			//ACC.enabled = true;
 			anim.Play (animList[Random.Range(1, 3)]);
+			ToggleTrackMotion(true);
 			break;
 		case Activity.DO_SOMETHING:
 			Debug.Log ("DO_SOMETHING");
-			RandomWalkObject.SetActive(false);
+			//ACC.enabled = false;
 			anim.Play (animList[Random.Range(3, animList.Length)]);
+			ToggleTrackMotion(false);
 			break;
 
 		}
@@ -80,23 +100,34 @@ public class AlienManager : MonoBehaviour
 	void Update ()
 	{
 		int randActivity = Random.Range (0, 3);
-		randomActivityTimer = randomActivityTimer + Time.deltaTime;
+		//randomActivityTimer = randomActivityTimer + Time.deltaTime;
+		bool timeUp = false;
+		if(CountDown > 0.0f)
+		{
+			CountDown -= Time.deltaTime;
+			if(CountDown <= 0.0f)
+			{
+				CountDown = Random.Range (10.0f, 15.0f);
+				timeUp = true;
+			}
+		}
 
-		if (KinectManager.userOnScene) {
+		if (KinectManager.userOnScene && !stopKinect) {
 			SetState (State.KINECT);
 		} else {
 			SetState (State.ACTIVITY);
-
-			if(randomActivityTimer > Random.Range (10.0f, 15.0f))
+			kinectTimer = 0.0f;
+			if(timeUp)
 			{
-				randomActivityTimer = 0.0f;
+				timeUp = false;
 
-				if(randActivity == 1)
+				if(randActivity == 1 && !KinectManager.userOnScene)
 				{
 					SetActivity (Activity.WALK);
 				}
 				else if(randActivity == 2)
 				{
+					stopKinect = false;
 					SetActivity (Activity.IDLE);
 				}
 				else{
@@ -105,7 +136,17 @@ public class AlienManager : MonoBehaviour
 			}
 		}
 
-		Debug.Log ("users : " + KinectManager.userOnScene);
+		if(state == State.KINECT)
+		{
+			kinectTimer = kinectTimer + Time.deltaTime;
+			if(kinectTimer > 20.0f && Random.value > 0.5f)
+			{
+				stopKinect = true;
+				timeUp = true;
+			}
+		}
+
+		//Debug.Log ("users : " + KinectManager.userOnScene);
 		//Debug.Log ("users2 : " + KM_instance.GetUsersCount());
 		//Debug.Log ("player : " + AC_instance.playerIndex);
 
